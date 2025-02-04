@@ -1,30 +1,40 @@
 ---
-   layout: default
-   title: Shop
-   ---
+layout: default
+title: Shop
+---
 
-   <div class="container mx-auto px-6 py-8">
-     <h1 class="text-3xl font-bold mb-6">Welcome to My Shop</h1>
-     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-       <!-- Product 1 -->
-       <div class="bg-white p-6 rounded-lg shadow">
-         <h2 class="text-xl font-bold mb-2">Product 1</h2>
-         <p class="text-gray-600 mb-4">$19.99</p>
-         <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add to Cart</button>
-       </div>
+<div class="container mx-auto px-6 py-8">
+  <h1 class="text-3xl font-bold mb-8 text-center">Welcome to My Minimal Shop</h1>
 
-       <!-- Product 2 -->
-       <div class="bg-white p-6 rounded-lg shadow">
-         <h2 class="text-xl font-bold mb-2">Product 2</h2>
-         <p class="text-gray-600 mb-4">$29.99</p>
-         <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add to Cart</button>
-       </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Product 1 -->
+    <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+      <img src="https://via.placeholder.com/300" alt="Product 1" class="rounded-lg mb-4">
+      <h2 class="text-xl font-bold mb-2">Product 1</h2>
+      <p class="text-gray-600 mb-4">$19.99</p>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+        Add to Cart
+      </button>
+    </div>
 
-       <!-- Product 3 -->
-       <div class="bg-white p-6 rounded-lg shadow">
-         <h2 class="text-xl font-bold mb-2">Product 3</h2>
-         <p class="text-gray-600 mb-4">$39.99</p>
-         <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add to Cart</button>
-       </div>
-     </div>
-   </div>
+    <!-- Product 2 -->
+    <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+      <img src="https://via.placeholder.com/300" alt="Product 2" class="rounded-lg mb-4">
+      <h2 class="text-xl font-bold mb-2">Product 2</h2>
+      <p class="text-gray-600 mb-4">$29.99</p>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+        Add to Cart
+      </button>
+    </div>
+
+    <!-- Product 3 -->
+    <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+      <img src="https://via.placeholder.com/300" alt="Product 3" class="rounded-lg mb-4">
+      <h2 class="text-xl font-bold mb-2">Product 3</h2>
+      <p class="text-gray-600 mb-4">$39.99</p>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+        Add to Cart
+      </button>
+    </div>
+  </div>
+</div>
