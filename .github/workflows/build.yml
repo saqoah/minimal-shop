@@ -1,43 +1,55 @@
 name: Build and Deploy
-   on:
-     push:
-       branches:
-         - main
-   permissions:
-     contents: write
-   jobs:
-     build:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v3
+on:
+  push:
+    branches:
+      - main
 
-         - name: Set up Ruby
-           uses: ruby/setup-ruby@v1
-           with:
-             ruby-version: 3.1
+permissions:
+  contents: write # Grant write access to the GITHUB_TOKEN
 
-         - name: Install Jekyll
-           run: gem install jekyll bundler
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-         - name: Install Node.js
-           uses: actions/setup-node@v3
-           with:
-             node-version: 16
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-         - name: Install Dependencies
-           run: |
-             npm install
-             bundle install
+      # Set up Ruby
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1 # Use Ruby 3.1 for compatibility
 
-         - name: Build Tailwind CSS
-           run: npm run build:css
+      # Install Jekyll and Bundler
+      - name: Install Jekyll
+        run: gem install jekyll bundler
 
-         - name: Build Jekyll Site
-           run: bundle exec jekyll build
+      # Install Node.js
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16 # Use Node.js 16 for Tailwind CSS
 
-         - name: Deploy to GitHub Pages
-           uses: peaceiris/actions-gh-pages@v3
-           with:
-             github_token: ${{ secrets.GITHUB_TOKEN }}
-             publish_dir: ./_site
-             publish_branch: gh-pages
+      # Install dependencies (Node.js and Ruby)
+      - name: Install dependencies
+        run: |
+          npm install
+          bundle install
+
+      # Build Tailwind CSS
+      - name: Build Tailwind CSS
+        run: npm run build:css
+
+      # Build Jekyll site
+      - name: Build Jekyll site
+        run: bundle exec jekyll build
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # Use the default GITHUB_TOKEN
+          publish_dir: ./_site # Directory where Jekyll outputs the site
+          publish_branch: gh-pages # Branch to deploy to
