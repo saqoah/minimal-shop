@@ -1,6 +1,5 @@
 title: My Minimal Shop
-description: A minimal shop built with Jekyll and Tailwind CSS.
-theme: minima
-plugins:
-  - jekyll-feed
-  - jekyll-github-metadata
+   description: A minimal shop built with Jekyll and Tailwind CSS.
+   theme: minima
+   plugins:
+     - jekyll-feed
