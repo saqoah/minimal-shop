@@ -25,9 +25,15 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
+      - name: Create initial Gradle build files
+        run: |
+          mkdir -p app/src/main
+          echo "plugins { id 'org.gradle.initialization.experimental' version '0.90' }" > settings.gradle.kts
+          echo "rootProject.name = \"minimal-shop\"" >> settings.gradle.kts
+
       - name: Initialize Gradle wrapper
         run: |
-          gradle wrapper --gradle-version 8.5
+          gradle wrapper --gradle-version 8.12.1
 
       - name: Generate Android project
         run: |
@@ -43,7 +49,12 @@ jobs:
 
       - name: Add internet permissions to AndroidManifest.xml
         run: |
-          sed -i '/<application/a\    <uses-permission android:name="android.permission.INTERNET" />' app/src/main/AndroidManifest.xml
+          if ! grep -q "android.permission.INTERNET" app/src/main/AndroidManifest.xml; then
+            sed -i '/<application/i\    <uses-permission android:name="android.permission.INTERNET" />' app/src/main/AndroidManifest.xml
+          fi
+
+      - name: Verify build
+        run: ./gradlew build
 
       - name: Commit changes
         run: |
