@@ -1,50 +1,54 @@
-name: Generate Android Compose App
+name: Generate Android App Project
 
 on:
   workflow_dispatch:
 
 jobs:
-  generate-app:
+  generate-android-app:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # Step 2: Install create-compose-app tool
-      - name: Install create-compose-app
-        run: sudo npm install -g create-compose-app
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-      # Step 3: Generate a new Compose app
-      - name: Create Compose App
-        run: create-compose-app --platform android --output ./compose-app
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
 
-      # Step 4: Add Internet permission to AndroidManifest.xml
-      - name: Add Internet Permission
+      - name: Install Android SDK components
         run: |
-          echo '<uses-permission android:name="android.permission.INTERNET"/>' >> compose-app/app/src/main/AndroidManifest.xml
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      # Step 5: Update MainActivity with basic setup
-      - name: Update MainActivity
+      - name: Initialize Gradle wrapper
         run: |
-          echo 'package com.example.composeapp
+          gradle wrapper --gradle-version 8.5
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
+      - name: Generate Android project
+        run: |
+          ./gradlew init \
+            --type basic \
+            --dsl kotlin \
+            --project-name MyComposeApp \
+            --package com.example.mycomposeapp \
+            --activity MainActivity \
+            --language kotlin \
+            --use-androidx \
+            --compose true
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            Text("Hello, Compose!")
-        }
-    }
-}' > compose-app/app/src/main/java/com/example/composeapp/MainActivity.kt
+      - name: Add internet permissions to AndroidManifest.xml
+        run: |
+          sed -i '/<application/a\    <uses-permission android:name="android.permission.INTERNET" />' app/src/main/AndroidManifest.xml
 
-      # Step 6: Build the project to validate setup
-      - name: Build Android Project
-        run: ./gradlew build
-        working-directory: compose-app
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Generated new Android Compose project with internet permissions"
+          git push
