@@ -1,236 +1,155 @@
-name: Generate Android App Project
+name: Android CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  generate-android-app:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v2
-
-      - name: Install Android SDK components
+      - name: Create project structure
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
-
-      - name: Create gradle.properties
-        run: |
-          cat << EOF > gradle.properties
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          android.useAndroidX=true
-          android.enableJetifier=true
-          kotlin.code.style=official
-          EOF
-
-      - name: Create Android project structure
-        run: |
-          mkdir -p app/src/main/java/com/example/mycomposeapp
-          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/java/com/example/app
           mkdir -p app/src/main/res/values
-
-      - name: Create build.gradle.kts
-        run: |
-          cat << EOF > build.gradle.kts
-          plugins {
-              id("com.android.application") version "8.1.0" apply false
-              id("org.jetbrains.kotlin.android") version "1.8.10" apply false
-          }
-          EOF
 
       - name: Create settings.gradle.kts
         run: |
-          cat << EOF > settings.gradle.kts
-          pluginManagement {
+          echo 'pluginManagement {
               repositories {
                   google()
                   mavenCentral()
-                  gradlePluginPortal()
               }
           }
           dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories {
                   google()
                   mavenCentral()
               }
           }
-          rootProject.name = "MyComposeApp"
-          include(":app")
-          EOF
+          rootProject.name = "ComposeApp"
+          include(":app")' > settings.gradle.kts
+
+      - name: Create build.gradle.kts
+        run: |
+          echo 'plugins {
+              id("com.android.application") version "8.1.0" apply false
+              id("org.jetbrains.kotlin.android") version "1.8.10" apply false
+          }' > build.gradle.kts
 
       - name: Create app/build.gradle.kts
         run: |
-          cat << EOF > app/build.gradle.kts
-          plugins {
+          echo 'plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
           }
           
           android {
-              namespace = "com.example.mycomposeapp"
+              namespace = "com.example.app"
               compileSdk = 33
               
               defaultConfig {
-                  applicationId = "com.example.mycomposeapp"
+                  applicationId = "com.example.app"
                   minSdk = 24
                   targetSdk = 33
                   versionCode = 1
                   versionName = "1.0"
-                  
-                  testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-              }
-              
-              buildTypes {
-                  release {
-                      isMinifyEnabled = false
-                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-                  }
-              }
-              
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-              
-              kotlinOptions {
-                  jvmTarget = "17"
               }
               
               buildFeatures {
-                  viewBinding = true
+                  compose = true
+              }
+              
+              composeOptions {
+                  kotlinCompilerExtensionVersion = "1.4.0"
+              }
+              
+              kotlinOptions {
+                  jvmTarget = "1.8"
               }
           }
           
           dependencies {
-              implementation("androidx.core:core-ktx:1.9.0")
-              implementation("androidx.appcompat:appcompat:1.6.1")
-              implementation("com.google.android.material:material:1.8.0")
-              implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-              testImplementation("junit:junit:4.13.2")
-              androidTestImplementation("androidx.test.ext:junit:1.1.5")
-              androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-          }
-          EOF
+              val composeBom = platform("androidx.compose:compose-bom:2023.01.00")
+              implementation(composeBom)
+              implementation("androidx.activity:activity-compose:1.6.1")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-tooling-preview")
+              debugImplementation("androidx.compose.ui:ui-tooling")
+          }' > app/build.gradle.kts
+
+      - name: Create gradle.properties
+        run: |
+          echo 'android.useAndroidX=true
+          org.gradle.jvmargs=-Xmx2048m' > gradle.properties
 
       - name: Create AndroidManifest.xml
         run: |
-          cat << EOF > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
+          echo '<?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <application
-                  android:allowBackup="true"
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="@string/app_name"
-                  android:roundIcon="@mipmap/ic_launcher_round"
-                  android:supportsRtl="true"
-                  android:theme="@style/Theme.MyComposeApp">
+              <application android:label="@string/app_name">
                   <activity
                       android:name=".MainActivity"
                       android:exported="true">
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
                   </activity>
               </application>
-          </manifest>
-          EOF
-
-      - name: Create MainActivity
-        run: |
-          cat << EOF > app/src/main/java/com/example/mycomposeapp/MainActivity.kt
-          package com.example.mycomposeapp
-
-          import androidx.appcompat.app.AppCompatActivity
-          import android.os.Bundle
-
-          class MainActivity : AppCompatActivity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContentView(R.layout.activity_main)
-              }
-          }
-          EOF
-
-      - name: Create layout
-        run: |
-          cat << EOF > app/src/main/res/layout/activity_main.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
-              
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Hello World!"
-                  app:layout_constraintBottom_toBottomOf="parent"
-                  app:layout_constraintLeft_toLeftOf="parent"
-                  app:layout_constraintRight_toRightOf="parent"
-                  app:layout_constraintTop_toTopOf="parent" />
-          
-          </androidx.constraintlayout.widget.ConstraintLayout>
-          EOF
+          </manifest>' > app/src/main/AndroidManifest.xml
 
       - name: Create strings.xml
         run: |
-          cat << EOF > app/src/main/res/values/strings.xml
+          echo '<?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <string name="app_name">MyComposeApp</string>
-          </resources>
-          EOF
+              <string name="app_name">Compose App</string>
+          </resources>' > app/src/main/res/values/strings.xml
 
-      - name: Create themes.xml
+      - name: Create MainActivity.kt
         run: |
-          cat << EOF > app/src/main/res/values/themes.xml
-          <resources>
-              <style name="Theme.MyComposeApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-                  <item name="colorPrimary">@color/purple_500</item>
-                  <item name="colorPrimaryVariant">@color/purple_700</item>
-                  <item name="colorOnPrimary">@color/white</item>
-                  <item name="colorSecondary">@color/teal_200</item>
-                  <item name="colorSecondaryVariant">@color/teal_700</item>
-                  <item name="colorOnSecondary">@color/black</item>
-                  <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-              </style>
-          </resources>
-          EOF
+          echo 'package com.example.app
 
-      - name: Create colors.xml
-        run: |
-          cat << EOF > app/src/main/res/values/colors.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="purple_200">#FFBB86FC</color>
-              <color name="purple_500">#FF6200EE</color>
-              <color name="purple_700">#FF3700B3</color>
-              <color name="teal_200">#FF03DAC5</color>
-              <color name="teal_700">#FF018786</color>
-              <color name="black">#FF000000</color>
-              <color name="white">#FFFFFFFF</color>
-          </resources>
-          EOF
+          import android.os.Bundle
+          import androidx.activity.ComponentActivity
+          import androidx.activity.compose.setContent
+          import androidx.compose.material3.Text
+          import androidx.compose.runtime.Composable
+          import androidx.compose.ui.tooling.preview.Preview
 
-      - name: Initialize Gradle wrapper
-        run: gradle wrapper --gradle-version 8.1.1
+          class MainActivity : ComponentActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContent {
+                      Greeting("Compose")
+                  }
+              }
+          }
 
-      - name: Verify build
+          @Composable
+          fun Greeting(name: String) {
+              Text(text = "Hello $name!")
+          }
+
+          @Preview
+          @Composable
+          fun PreviewGreeting() {
+              Greeting("Preview")
+          }' > app/src/main/java/com/example/app/MainActivity.kt
+
+      - name: Initialize Gradle Wrapper
+        run: gradle wrapper
+
+      - name: Build with Gradle
         run: ./gradlew build
 
       - name: Commit changes
@@ -238,5 +157,5 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Generated new Android project"
+          git commit -m "Setup Kotlin Compose project"
           git push
