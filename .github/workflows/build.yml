@@ -27,34 +27,169 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      - name: Create initial Gradle files
+      - name: Create Android project structure
         run: |
-          mkdir -p app/src/main
-          echo "rootProject.name = \"minimal-shop\"" > settings.gradle.kts
-          echo "plugins { application }" > build.gradle.kts
+          mkdir -p app/src/main/java/com/example/mycomposeapp
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+
+      - name: Create build.gradle.kts
+        run: |
+          cat << EOF > build.gradle.kts
+          plugins {
+              id("com.android.application") version "8.1.0" apply false
+              id("org.jetbrains.kotlin.android") version "1.8.10" apply false
+          }
+          EOF
+
+      - name: Create settings.gradle.kts
+        run: |
+          cat << EOF > settings.gradle.kts
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "MyComposeApp"
+          include(":app")
+          EOF
+
+      - name: Create app/build.gradle.kts
+        run: |
+          cat << EOF > app/build.gradle.kts
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+          
+          android {
+              namespace = "com.example.mycomposeapp"
+              compileSdk = 33
+              
+              defaultConfig {
+                  applicationId = "com.example.mycomposeapp"
+                  minSdk = 24
+                  targetSdk = 33
+                  versionCode = 1
+                  versionName = "1.0"
+              }
+              
+              buildTypes {
+                  release {
+                      isMinifyEnabled = false
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                  }
+              }
+              
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          
+          dependencies {
+              implementation("androidx.core:core-ktx:1.9.0")
+              implementation("androidx.appcompat:appcompat:1.6.1")
+              implementation("com.google.android.material:material:1.8.0")
+              testImplementation("junit:junit:4.13.2")
+              androidTestImplementation("androidx.test.ext:junit:1.1.5")
+              androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+          }
+          EOF
+
+      - name: Create AndroidManifest.xml
+        run: |
+          cat << EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="@string/app_name"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:supportsRtl="true"
+                  android:theme="@style/Theme.MyComposeApp">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+      - name: Create MainActivity
+        run: |
+          cat << EOF > app/src/main/java/com/example/mycomposeapp/MainActivity.kt
+          package com.example.mycomposeapp
+
+          import androidx.appcompat.app.AppCompatActivity
+          import android.os.Bundle
+
+          class MainActivity : AppCompatActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_main)
+              }
+          }
+          EOF
+
+      - name: Create layout
+        run: |
+          cat << EOF > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+              
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="Hello World!"
+                  app:layout_constraintBottom_toBottomOf="parent"
+                  app:layout_constraintLeft_toLeftOf="parent"
+                  app:layout_constraintRight_toRightOf="parent"
+                  app:layout_constraintTop_toTopOf="parent" />
+          
+          </androidx.constraintlayout.widget.ConstraintLayout>
+          EOF
+
+      - name: Create strings.xml
+        run: |
+          cat << EOF > app/src/main/res/values/strings.xml
+          <resources>
+              <string name="app_name">MyComposeApp</string>
+          </resources>
+          EOF
 
       - name: Initialize Gradle wrapper
-        run: gradle wrapper
+        run: gradle wrapper --gradle-version 8.1.1
 
-      - name: Generate Android project
-        run: |
-          ./gradlew init \
-            --type android-application \
-            --dsl kotlin \
-            --project-name MyComposeApp \
-            --package com.example.mycomposeapp \
-            --language kotlin
-
-      - name: Add internet permissions to AndroidManifest.xml
-        run: |
-          if [ -f "app/src/main/AndroidManifest.xml" ]; then
-            sed -i '/<application/i\    <uses-permission android:name="android.permission.INTERNET" />' app/src/main/AndroidManifest.xml
-          fi
+      - name: Verify build
+        run: ./gradlew build
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Generated new Android project with internet permissions"
+          git commit -m "Generated new Android project"
           git push
