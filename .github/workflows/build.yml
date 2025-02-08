@@ -1,7 +1,9 @@
 name: Generate Android App Project
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   generate-android-app:
@@ -25,41 +27,34 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      - name: Create initial Gradle build files
+      - name: Create initial Gradle files
         run: |
           mkdir -p app/src/main
-          echo 'plugins { id("org.gradle.initialization.experimental") version "0.90" }' > settings.gradle.kts
-          echo 'rootProject.name = "minimal-shop"' >> settings.gradle.kts
+          echo "rootProject.name = \"minimal-shop\"" > settings.gradle.kts
+          echo "plugins { application }" > build.gradle.kts
 
       - name: Initialize Gradle wrapper
-        run: |
-          gradle wrapper --gradle-version 8.12.1
+        run: gradle wrapper
 
       - name: Generate Android project
         run: |
           ./gradlew init \
-            --type basic \
+            --type android-application \
             --dsl kotlin \
             --project-name MyComposeApp \
             --package com.example.mycomposeapp \
-            --activity MainActivity \
-            --language kotlin \
-            --use-androidx \
-            --compose true
+            --language kotlin
 
       - name: Add internet permissions to AndroidManifest.xml
         run: |
-          if ! grep -q "android.permission.INTERNET" app/src/main/AndroidManifest.xml; then
+          if [ -f "app/src/main/AndroidManifest.xml" ]; then
             sed -i '/<application/i\    <uses-permission android:name="android.permission.INTERNET" />' app/src/main/AndroidManifest.xml
           fi
-
-      - name: Verify build
-        run: ./gradlew build
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Generated new Android Compose project with internet permissions"
+          git commit -m "Generated new Android project with internet permissions"
           git push
