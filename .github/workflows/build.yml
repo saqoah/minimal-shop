@@ -28,8 +28,8 @@ jobs:
       - name: Create initial Gradle build files
         run: |
           mkdir -p app/src/main
-          echo "plugins { id 'org.gradle.initialization.experimental' version '0.90' }" > settings.gradle.kts
-          echo "rootProject.name = \"minimal-shop\"" >> settings.gradle.kts
+          echo 'plugins { id("org.gradle.initialization.experimental") version "0.90" }' > settings.gradle.kts
+          echo 'rootProject.name = "minimal-shop"' >> settings.gradle.kts
 
       - name: Initialize Gradle wrapper
         run: |
