@@ -1,240 +1,50 @@
-name: Generate and Build Android App
+name: Generate Android Compose App
 
 on:
-  push:
-    branches:
-      - main # Trigger on pushes to the main branch
-  pull_request:
-    branches:
-      - main # Trigger on pull requests targeting the main branch
+  workflow_dispatch:
 
 jobs:
-  generate-android-app:
+  generate-app:
     runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the repository
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      # Step 2: Set up Java
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11' # Use Java 11 (required by Android Gradle Plugin)
-          distribution: 'adopt'
+      # Step 2: Install create-compose-app tool
+      - name: Install create-compose-app
+        run: sudo npm install -g create-compose-app
 
-      # Step 3: Initialize the Android Project
-      - name: Initialize Android Project
+      # Step 3: Generate a new Compose app
+      - name: Create Compose App
+        run: create-compose-app --platform android --output ./compose-app
+
+      # Step 4: Add Internet permission to AndroidManifest.xml
+      - name: Add Internet Permission
         run: |
-          # Create the project directory
-          mkdir MyApp
-          cd MyApp
+          echo '<uses-permission android:name="android.permission.INTERNET"/>' >> compose-app/app/src/main/AndroidManifest.xml
 
-          # Create the basic structure
-          mkdir -p app/src/main/java/com/example/myapp
-          mkdir -p app/src/main/res/layout
-          mkdir -p app/src/main/res/values
-
-          # Create the build.gradle files
-          echo "plugins {
-              id 'com.android.application'
-              id 'org.jetbrains.kotlin.android'
-          }
-
-          android {
-              compileSdk 33
-
-              defaultConfig {
-                  applicationId 'com.example.myapp'
-                  minSdk 21
-                  targetSdk 33
-                  versionCode 1
-                  versionName '1.0'
-              }
-
-              buildTypes {
-                  release {
-                      minifyEnabled false
-                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                  }
-              }
-
-              composeOptions {
-                  kotlinCompilerExtensionVersion '1.4.3'
-              }
-
-              packagingOptions {
-                  resources {
-                      excludes += '/META-INF/{AL2.0,LGPL2.1}'
-                  }
-              }
-          }
-
-          dependencies {
-              implementation 'androidx.core:core-ktx:1.9.0'
-              implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
-              implementation 'androidx.activity:activity-compose:1.7.2'
-              implementation 'androidx.compose.ui:ui:1.4.3'
-              implementation 'androidx.compose.material:material:1.4.3'
-              implementation 'androidx.compose.ui:ui-tooling-preview:1.4.3'
-              debugImplementation 'androidx.compose.ui:ui-tooling:1.4.3'
-          }" > app/build.gradle
-
-          echo "buildscript {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.0.2'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.20'
-              }
-          }
-
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          task clean(type: Delete) {
-              delete rootProject.buildDir
-          }" > build.gradle
-
-          echo "apply plugin: 'com.android.application'
-          apply plugin: 'kotlin-android'" > settings.gradle
-
-          # Create the AndroidManifest.xml file
-          echo "<?xml version='1.0' encoding='utf-8'?>
-          <manifest xmlns:android='http://schemas.android.com/apk/res/android'
-              package='com.example.myapp'>
-
-              <uses-permission android:name='android.permission.INTERNET' />
-              <uses-permission android:name='android.permission.READ_EXTERNAL_STORAGE' />
-              <uses-permission android:name='android.permission.WRITE_EXTERNAL_STORAGE' />
-
-              <application
-                  android:allowBackup='true'
-                  android:icon='@mipmap/ic_launcher'
-                  android:label='@string/app_name'
-                  android:roundIcon='@mipmap/ic_launcher_round'
-                  android:supportsRtl='true'
-                  android:theme='@style/Theme.MyApp'>
-                  <activity
-                      android:name='com.example.myapp.MainActivity'
-                      android:exported='true'>
-                      <intent-filter>
-                          <action android:name='android.intent.action.MAIN' />
-                          <category android:name='android.intent.category.LAUNCHER' />
-                      </intent-filter>
-                  </activity>
-              </application>
-
-          </manifest>" > app/src/main/AndroidManifest.xml
-
-          # Create the MainActivity.kt file
-          echo "package com.example.myapp
-
-          import android.os.Bundle
-          import androidx.activity.ComponentActivity
-          import androidx.activity.compose.setContent
-          import androidx.compose.foundation.layout.Column
-          import androidx.compose.foundation.layout.fillMaxSize
-          import androidx.compose.material.Button
-          import androidx.compose.material.Text
-          import androidx.compose.runtime.Composable
-          import androidx.compose.ui.Modifier
-          import androidx.compose.ui.platform.LocalContext
-          import androidx.compose.ui.tooling.preview.Preview
-          import androidx.core.content.ContextCompat
-
-          class MainActivity : ComponentActivity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContent {
-                      MyAppContent()
-                  }
-              }
-          }
-
-          @Composable
-          fun MyAppContent() {
-              Column(modifier = Modifier.fillMaxSize()) {
-                  Text(text = 'Welcome to My App!')
-                  Button(onClick = { downloadVideo() }) {
-                      Text(text = 'Download Video')
-                  }
-              }
-          }
-
-          fun downloadVideo() {
-              val context = LocalContext.current
-              val url = 'https://myserver.com/dailyreel.mp4'
-              val fileDir = context.getExternalFilesDir(null)
-              val videoFile = File(fileDir, 'dailyreel.mp4')
-
-              Thread {
-                  try {
-                      val input = URL(url).openStream()
-                      val output = FileOutputStream(videoFile)
-                      input.copyTo(output)
-                      input.close()
-                      output.close()
-                      ContextCompat.startForegroundService(context, Intent(context, VideoSharingService::class.java))
-                  } catch (e: Exception) {
-                      e.printStackTrace()
-                  }
-              }.start()
-          }
-
-          @Preview(showBackground = true)
-          @Composable
-          fun DefaultPreview() {
-              MyAppContent()
-          }" > app/src/main/java/com/example/myapp/MainActivity.kt
-
-          # Create the VideoSharingService.kt file
-          echo "package com.example.myapp
-
-          import android.accessibilityservice.AccessibilityService
-          import android.view.accessibility.AccessibilityEvent
-          import android.widget.Toast
-
-          class VideoSharingService : AccessibilityService() {
-
-              override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-                  if (event?.packageName?.toString() == 'com.instagram.android') {
-                      Toast.makeText(this, 'Sharing video to Instagram...', Toast.LENGTH_SHORT).show()
-                      // Add logic to share video here
-                  }
-              }
-
-              override fun onInterrupt() {}
-          }" > app/src/main/java/com/example/myapp/VideoSharingService.kt
-
-      # Step 4: Install Dependencies
-      - name: Install Dependencies
+      # Step 5: Update MainActivity with basic setup
+      - name: Update MainActivity
         run: |
-          cd MyApp
-          chmod +x gradlew
-          ./gradlew build --refresh-dependencies
+          echo 'package com.example.composeapp
 
-      # Step 5: Build the APK
-      - name: Build APK
-        run: |
-          cd MyApp
-          ./gradlew assembleDebug
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.Text
 
-      # Step 6: Upload APK as Artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
-        with:
-          name: debug-apk
-          path: MyApp/app/build/outputs/apk/debug/app-debug.apk
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            Text("Hello, Compose!")
+        }
+    }
+}' > compose-app/app/src/main/java/com/example/composeapp/MainActivity.kt
 
-      # Optional: Notify on Completion
-      - name: Notify on Completion
-        if: always()
-        run: echo "Build completed. APK is available as an artifact."
+      # Step 6: Build the project to validate setup
+      - name: Build Android Project
+        run: ./gradlew build
+        working-directory: compose-app
