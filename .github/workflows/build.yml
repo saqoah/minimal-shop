@@ -17,12 +17,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate Android project
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Install Android SDK components
         run: |
-          # Install Android SDK components
+          yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-          # Generate a new Android project with Compose
+      - name: Generate Android project
+        run: |
           ./gradlew init \
             --type basic \
             --dsl kotlin \
