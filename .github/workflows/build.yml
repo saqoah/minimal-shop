@@ -23,24 +23,22 @@ jobs:
       - name: Install Android SDK components
         run: |
           yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Generate Android project using `cookiecutter`
+      - name: Create Android Project using `Android Studio` template
         run: |
-          sudo apt-get install -y cookiecutter
-          cookiecutter gh:android/cookiecutter-android --no-input \
-            project_name="MyComposeApp" \
-            package_name="com.example.mycomposeapp" \
-            use_compose="yes"
+          mkdir MyComposeApp
+          cd MyComposeApp
+          yes "" | npx react-native init MyComposeApp --template react-native-template-typescript
 
       - name: Add internet permissions to AndroidManifest.xml
         run: |
-          sed -i '/<application/a\    <uses-permission android:name="android.permission.INTERNET" />' MyComposeApp/app/src/main/AndroidManifest.xml
+          sed -i '/<application/a\    <uses-permission android:name="android.permission.INTERNET" />' MyComposeApp/android/app/src/main/AndroidManifest.xml
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Generated new Android Compose project with internet permissions"
+          git commit -m "Generated new Android project with internet permissions"
           git push
